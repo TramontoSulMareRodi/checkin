@@ -130,11 +130,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 /* ── SITE HEADER ─────────────────────────────────────────────────────────── */
 #site-header{background:#fff;border-bottom:1px solid #e8e8e8;width:100%;box-sizing:border-box}
 .hdr-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 24px}
-.hdr-lang{display:flex;gap:4px;flex-shrink:0;grid-column:1;justify-self:start}
-.hdr-lang-btn{display:flex;align-items:center;gap:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:rgb(74,88,104);text-decoration:none;border:1px solid #ccc;border-radius:2px;padding:3px 7px;white-space:nowrap}
+.hdr-lang{display:flex;gap:0;flex-shrink:0;grid-column:1;justify-self:start;border:1px solid #ccc;border-radius:2px;overflow:hidden}
+.hdr-lang-btn{display:flex;align-items:center;gap:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:rgb(74,88,104);text-decoration:none;border:none;padding:4px 8px;white-space:nowrap}
+.hdr-lang-btn:first-child{border-right:1px solid #ccc}
 .hdr-lang-btn img{width:16px;height:11px;object-fit:cover}
 .hdr-lang-btn:hover{background:#f5f5f5}
-.hdr-lang-btn.active{background:#e8eef2;border-color:#aaa}
+.hdr-lang-btn.active{background:#e8eef2}
 .hdr-nav{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;grid-column:2;justify-self:center}
 .hdr-nav-link{font-family:'Lato',lato-light,sans-serif;font-style:italic;font-weight:400;font-size:14px;color:rgb(157,187,223);text-decoration:none;padding:5px 8px 8px;white-space:nowrap;border-top:3px solid transparent;margin-top:-3px;line-height:30px}
 .hdr-nav-link:hover{border-top-color:rgb(157,187,223)}
@@ -200,9 +201,11 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
   function renderHeader() {
     var nav = "";
     var overlay = "";
+    var selfUrl = window.location.pathname + (lang === "en" ? "?lang=en" : "");
     for (var i = 0; i < links.length; i++) {
       var label = lang === "en" ? links[i][1] : links[i][0];
-      var href = base + links[i][2] + sfx;
+      var isCheckIn = links[i][2] === "/check-in";
+      var href = isCheckIn ? selfUrl : (base + links[i][2] + sfx);
       nav += "<a href='" + href + "' class='hdr-nav-link'>" + label + "</a>";
       overlay += "<a href='" + href + "' class='hdr-overlay-link'>" + label + "</a>";
     }
@@ -251,7 +254,6 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
 
 <div class="wrap">
   <p class="tsm-title">Check-in Online</p>
-  <p class="tsm-sub">Tramonto sul Mare · Casa Vacanze a Rodi Garganico</p>
 
   <div class="steps">
     <div class="step active" id="si1">Soggiorno</div>
