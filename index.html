@@ -604,15 +604,32 @@ function acEril(inp) {
   const q = inp.value.trim().toUpperCase();
   const list = document.getElementById('eril-list');
   if (q.length < 1) { list.classList.add('hidden'); return; }
-  const exact    = LUOGHI.filter(l => l[1] && l[1] === q);
-  const starts   = LUOGHI.filter(l => l[1] && l[1] !== q && l[1].startsWith(q));
-  const contains = LUOGHI.filter(l => l[1] && !l[1].startsWith(q) && (l[1].includes(' '+q) || l[1].includes('-'+q)));
-  const matches  = [...exact, ...starts, ...contains].slice(0,15);
-  if (!matches.length) { list.classList.add('hidden'); return; }
-  list.innerHTML = matches.map(l => {
-    const label = l[2]==='ES' ? l[1] : l[1]+' ('+l[2]+')';
-    return `<div class="ac-item" data-desc="${l[1]}" data-prov="${l[2]}" onclick="acErilSelect(this)">${label}</div>`;
-  }).join('');
+  if (typeof LUOGHI === 'undefined' || typeof STATI === 'undefined') {
+    list.innerHTML='<div class="ac-item" style="color:#999">Caricamento...</div>';
+    list.classList.remove('hidden'); return;
+  }
+  // Search comuni italiani (prov != ES)
+  const italiani = LUOGHI.filter(l => l[1] && l[2] !== 'ES');
+  const exactIT = italiani.filter(l => l[1] === q);
+  const startsIT = italiani.filter(l => l[1] !== q && l[1].startsWith(q));
+  const containsIT = italiani.filter(l => !l[1].startsWith(q) && (l[1].includes(' '+q) || l[1].includes('-'+q)));
+  const matchesIT = [...exactIT, ...startsIT, ...containsIT].slice(0, 10);
+
+  // Search stati esteri
+  const exactST = STATI.filter(l => l[1] === q);
+  const startsST = STATI.filter(l => l[1] !== q && l[1].startsWith(q));
+  const containsST = STATI.filter(l => !l[1].startsWith(q) && l[1].includes(q));
+  const matchesST = [...exactST, ...startsST, ...containsST].slice(0, 5);
+
+  const allMatches = [
+    ...matchesIT.map(l => ({desc:l[1], prov:l[2], label:l[1]+' ('+l[2]+')'})),
+    ...matchesST.map(l => ({desc:l[1], prov:'ES', label:l[1]+' (Estero)'}))
+  ];
+
+  if (!allMatches.length) { list.classList.add('hidden'); return; }
+  list.innerHTML = allMatches.map(m =>
+    '<div class="ac-item" data-desc="'+m.desc+'" data-prov="'+m.prov+'" onclick="acErilSelect(this)">'+m.label+'</div>'
+  ).join('');
   list.classList.remove('hidden');
 }
 function acErilSelect(el) {
