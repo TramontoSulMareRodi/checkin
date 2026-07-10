@@ -427,8 +427,8 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f-cam').click()">📷 Fotocamera</button>
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f').click()">📁 Carica file</button>
             </div>
-            <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';runOcrScan(this.files[0]);" style="display:none">
-            <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';runOcrScan(this.files[0]);" style="display:none">
+            <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';runOcrScan(this.files[0],'fronte');" style="display:none">
+            <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';runOcrScan(this.files[0],'fronte');" style="display:none">
             <div class="upload-ok" id="ok-f" style="margin-top:6px"></div>
             <div id="ocr-status" style="margin-top:8px;font-size:12px;color:#7a9bbf"></div>
             <div id="ocr-suggestion" class="hidden" style="margin-top:8px;text-align:left;background:#f7f9fb;border:1px solid #dce8f0;border-radius:4px;padding:10px 12px;font-size:13px">
@@ -449,8 +449,8 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r-cam').click()">📷 Fotocamera</button>
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r').click()">📁 Carica file</button>
             </div>
-            <input type="file" id="upl-r-cam" accept="image/*" capture="environment" onchange="setUpload('upl-r-cam','ok-r');document.getElementById('upl-r').value='';" style="display:none">
-            <input type="file" id="upl-r" accept="image/*,.pdf" onchange="setUpload('upl-r','ok-r');document.getElementById('upl-r-cam').value='';" style="display:none">
+            <input type="file" id="upl-r-cam" accept="image/*" capture="environment" onchange="setUpload('upl-r-cam','ok-r');document.getElementById('upl-r').value='';runOcrScan(this.files[0],'retro');" style="display:none">
+            <input type="file" id="upl-r" accept="image/*,.pdf" onchange="setUpload('upl-r','ok-r');document.getElementById('upl-r-cam').value='';runOcrScan(this.files[0],'retro');" style="display:none">
             <div class="upload-ok" id="ok-r" style="margin-top:6px"></div>
           </div>
         </div>
@@ -1073,7 +1073,7 @@ function setUpload(inputId,okId){
 }
 
 // ── OCR SCAN DOCUMENTO ───────────────────────────────────────────────────────
-let lastOcrData = null;
+let lastOcrData = null; // merged best-effort result across fronte+retro scans
 
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
@@ -1084,11 +1084,35 @@ function fileToBase64(file){
   });
 }
 
-function runOcrScan(file){
-  if(!file) return;
+function renderOcrSuggestion(){
   const statusEl = document.getElementById('ocr-status');
   const boxEl = document.getElementById('ocr-suggestion');
-  boxEl.classList.add('hidden');
+  if(!lastOcrData){
+    statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente. Puoi comunque compilare i campi manualmente.';
+    boxEl.classList.add('hidden');
+    return;
+  }
+  const p = lastOcrData;
+  const rows = [];
+  if(p.cognome) rows.push('<b>Cognome:</b> '+p.cognome);
+  if(p.nome) rows.push('<b>Nome:</b> '+p.nome);
+  if(p.dob) rows.push('<b>Data di nascita:</b> '+fmt(p.dob));
+  if(p.sesso) rows.push('<b>Sesso:</b> '+(p.sesso==='1'?'Maschile':'Femminile'));
+  if(p.numdoc) rows.push('<b>Numero documento:</b> '+p.numdoc);
+  if(p.tipoDocGuess) rows.push('<b>Tipo documento:</b> '+p.tipoDocGuess);
+  if(!rows.length){
+    statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente. Puoi comunque compilare i campi manualmente.';
+    boxEl.classList.add('hidden');
+    return;
+  }
+  document.getElementById('ocr-fields').innerHTML = rows.join('<br>');
+  statusEl.textContent = '';
+  boxEl.classList.remove('hidden');
+}
+
+function runOcrScan(file, side){
+  if(!file) return;
+  const statusEl = document.getElementById('ocr-status');
   statusEl.textContent = '🔍 Scansione documento in corso...';
 
   fileToBase64(file).then(base64 => {
@@ -1098,30 +1122,32 @@ function runOcrScan(file){
       body: JSON.stringify({ action:'ocr', imageBase64: base64 })
     });
   }).then(r => r.json()).then(res => {
-    if(res.status === 'ok' && res.parsed){
-      lastOcrData = res.parsed;
+    if(res.status === 'ok' && res.parsed && Object.keys(res.parsed).length){
       const p = res.parsed;
-      const rows = [];
-      if(p.cognome) rows.push('<b>Cognome:</b> '+p.cognome);
-      if(p.nome) rows.push('<b>Nome:</b> '+p.nome);
-      if(p.dob) rows.push('<b>Data di nascita:</b> '+fmt(p.dob));
-      if(p.sesso) rows.push('<b>Sesso:</b> '+(p.sesso==='1'?'Maschile':'Femminile'));
-      if(p.numdoc) rows.push('<b>Numero documento:</b> '+p.numdoc);
-      if(p.tipoDocGuess) rows.push('<b>Tipo documento:</b> '+p.tipoDocGuess);
-      if(!rows.length){
-        statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente. Puoi comunque compilare i campi manualmente.';
-        return;
+      const isMrz = p._source === 'mrz';
+      if(!lastOcrData){
+        lastOcrData = p;
+      } else if(isMrz){
+        // I dati letti dalla MRZ (fascia leggibile a macchina) sono più affidabili:
+        // sovrascrivono eventuali dati già letti dal fronte via fallback.
+        lastOcrData = { ...lastOcrData, ...p };
+      } else {
+        // Dati da fallback: riempiono solo i campi ancora mancanti, senza
+        // sovrascrivere dati già ottenuti (es. da una MRZ letta in precedenza).
+        lastOcrData = { ...p, ...lastOcrData };
       }
-      document.getElementById('ocr-fields').innerHTML = rows.join('<br>');
-      statusEl.textContent = '';
-      boxEl.classList.remove('hidden');
+      renderOcrSuggestion();
+    } else if(!lastOcrData){
+      statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente da questo lato. Puoi comunque compilare i campi manualmente.';
+      console.warn('OCR: nessun dato da', side, res.message || '');
     } else {
-      statusEl.textContent = '⚠️ Scansione non riuscita. Compila i campi manualmente.';
-      console.warn('OCR error:', res.message);
+      renderOcrSuggestion();
     }
   }).catch(err => {
-    statusEl.textContent = '⚠️ Scansione non disponibile al momento. Compila i campi manualmente.';
-    console.error('OCR request failed:', err);
+    if(!lastOcrData){
+      statusEl.textContent = '⚠️ Scansione non disponibile al momento. Compila i campi manualmente.';
+    }
+    console.error('OCR request failed ('+side+'):', err);
   });
 }
 
@@ -1155,6 +1181,7 @@ function dismissOcrSuggestion(){
   document.getElementById('ocr-suggestion').classList.add('hidden');
   document.getElementById('ocr-status').textContent = '';
 }
+
 
 // ── RIEPILOGO ────────────────────────────────────────────────────────────────
 function fmt(v){return v?new Date(v+'T12:00:00').toLocaleDateString('it-IT'):'—';}
