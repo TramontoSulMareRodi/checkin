@@ -427,9 +427,18 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f-cam').click()">📷 Fotocamera</button>
               <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f').click()">📁 Carica file</button>
             </div>
-            <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';" style="display:none">
-            <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';" style="display:none">
+            <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';runOcrScan(this.files[0]);" style="display:none">
+            <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';runOcrScan(this.files[0]);" style="display:none">
             <div class="upload-ok" id="ok-f" style="margin-top:6px"></div>
+            <div id="ocr-status" style="margin-top:8px;font-size:12px;color:#7a9bbf"></div>
+            <div id="ocr-suggestion" class="hidden" style="margin-top:8px;text-align:left;background:#f7f9fb;border:1px solid #dce8f0;border-radius:4px;padding:10px 12px;font-size:13px">
+              <div style="font-weight:700;color:#e07b39;margin-bottom:6px">📄 Dati riconosciuti dal documento</div>
+              <div id="ocr-fields" style="line-height:1.6;color:#444"></div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button type="button" class="add-btn" style="padding:6px 12px;font-size:12px" onclick="applyOcrData()">✓ Usa questi dati</button>
+                <button type="button" class="btn-back" style="padding:6px 12px;font-size:12px" onclick="dismissOcrSuggestion()">Ignora</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="field">
@@ -1056,9 +1065,95 @@ function rmOspite(n){
 }
 
 // ── UPLOAD ───────────────────────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwf1gXh7jPgnETvNso2xGgrB3b_wgdz2t7w3Gw5KduwENJ88d0EWFwkOwNMjqvhis1_5Q/exec';
+
 function setUpload(inputId,okId){
   const f=document.getElementById(inputId).files[0];
   if(f)document.getElementById(okId).textContent='✓ '+f.name;
+}
+
+// ── OCR SCAN DOCUMENTO ───────────────────────────────────────────────────────
+let lastOcrData = null;
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function runOcrScan(file){
+  if(!file) return;
+  const statusEl = document.getElementById('ocr-status');
+  const boxEl = document.getElementById('ocr-suggestion');
+  boxEl.classList.add('hidden');
+  statusEl.textContent = '🔍 Scansione documento in corso...';
+
+  fileToBase64(file).then(base64 => {
+    return fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'}, // avoids CORS preflight
+      body: JSON.stringify({ action:'ocr', imageBase64: base64 })
+    });
+  }).then(r => r.json()).then(res => {
+    if(res.status === 'ok' && res.parsed){
+      lastOcrData = res.parsed;
+      const p = res.parsed;
+      const rows = [];
+      if(p.cognome) rows.push('<b>Cognome:</b> '+p.cognome);
+      if(p.nome) rows.push('<b>Nome:</b> '+p.nome);
+      if(p.dob) rows.push('<b>Data di nascita:</b> '+fmt(p.dob));
+      if(p.sesso) rows.push('<b>Sesso:</b> '+(p.sesso==='1'?'Maschile':'Femminile'));
+      if(p.numdoc) rows.push('<b>Numero documento:</b> '+p.numdoc);
+      if(p.tipoDocGuess) rows.push('<b>Tipo documento:</b> '+p.tipoDocGuess);
+      if(!rows.length){
+        statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente. Puoi comunque compilare i campi manualmente.';
+        return;
+      }
+      document.getElementById('ocr-fields').innerHTML = rows.join('<br>');
+      statusEl.textContent = '';
+      boxEl.classList.remove('hidden');
+    } else {
+      statusEl.textContent = '⚠️ Scansione non riuscita. Compila i campi manualmente.';
+      console.warn('OCR error:', res.message);
+    }
+  }).catch(err => {
+    statusEl.textContent = '⚠️ Scansione non disponibile al momento. Compila i campi manualmente.';
+    console.error('OCR request failed:', err);
+  });
+}
+
+function applyOcrData(){
+  if(!lastOcrData) return;
+  const p = lastOcrData;
+  if(p.cognome) document.getElementById('cognome').value = p.cognome;
+  if(p.nome) document.getElementById('nome').value = p.nome;
+  if(p.dob){
+    document.getElementById('dob').value = p.dob;
+    const [y,m,d] = p.dob.split('-');
+    document.getElementById('dob-display').value = d+'/'+m+'/'+y;
+  }
+  if(p.sesso) document.getElementById('sesso').value = p.sesso;
+  if(p.numdoc) document.getElementById('numdoc').value = p.numdoc;
+  if(p.tipoDocCode){
+    document.getElementById('tipodoc').value = p.tipoDocCode;
+    document.getElementById('tdoc-input').value = p.tipoDocGuess || '';
+    document.getElementById('tdoc-desc').value = p.tipoDocGuess || '';
+  }
+  // Rimuove eventuali segnalazioni di errore sui campi ora compilati
+  ['f-cog','f-nom','f-dob','f-ses','f-ndoc','f-tdoc'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('invalid');
+  });
+  document.getElementById('ocr-status').textContent = '✓ Dati applicati. Verifica i campi allo step "Ospite principale".';
+  document.getElementById('ocr-suggestion').classList.add('hidden');
+}
+
+function dismissOcrSuggestion(){
+  document.getElementById('ocr-suggestion').classList.add('hidden');
+  document.getElementById('ocr-status').textContent = '';
 }
 
 // ── RIEPILOGO ────────────────────────────────────────────────────────────────
@@ -1195,7 +1290,7 @@ function submitForm(){
     data.docRetro  = retro;
 
     // ── POST to Google Apps Script ─────────────────────────────────────────
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwf1gXh7jPgnETvNso2xGgrB3b_wgdz2t7w3Gw5KduwENJ88d0EWFwkOwNMjqvhis1_5Q/exec';
+    // (GAS_URL is defined globally, see top of script)
 
     // Use XHR to avoid CORS preflight issues with GAS
     const xhr = new XMLHttpRequest();
