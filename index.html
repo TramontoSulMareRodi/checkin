@@ -257,9 +257,9 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
 
   <div class="steps">
     <div class="step active" id="si1">Soggiorno</div>
-    <div class="step" id="si2">Ospite princ.</div>
-    <div class="step" id="si3">Altri ospiti</div>
-    <div class="step" id="si4">Documenti</div>
+    <div class="step" id="si2">Documenti</div>
+    <div class="step" id="si3">Ospite princ.</div>
+    <div class="step" id="si4">Altri ospiti</div>
     <div class="step" id="si5">Riepilogo</div>
   </div>
 
@@ -305,8 +305,8 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
 
     </div>
 
-    <!-- STEP 2 -->
-    <div id="s2" class="hidden">
+    <!-- STEP 3 (Ospite principale) -->
+    <div id="s3" class="hidden">
       <div class="sec-title">Dati anagrafici</div>
       <div class="ospite-card">
         <div class="ospite-label">Ospite principale — Intestatario della prenotazione</div>
@@ -409,13 +409,13 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
       </div>
     </div>
 
-    <!-- STEP 3 -->
-    <div id="s3" class="hidden">
+    <!-- STEP 4 (Altri ospiti) -->
+    <div id="s4" class="hidden">
       <div id="altri-container"></div>
     </div>
 
-    <!-- STEP 4 -->
-    <div id="s4" class="hidden">
+    <!-- STEP 2 (Documenti) -->
+    <div id="s2" class="hidden">
       <div class="info">Carica fronte e retro del documento dell'ospite principale. Utilizzati esclusivamente per gli adempimenti di legge (D.M. 07/01/2013).</div>
       <div class="sec-title">Upload documento ospite principale</div>
       <div class="row c2">
@@ -895,7 +895,7 @@ function showStep(n) {
   document.getElementById('btn-nx').classList.toggle('hidden', n===TOT);
   document.getElementById('btn-sb').classList.toggle('hidden', n!==TOT);
   updTabs();
-  if (n===3) updAltriInfo();
+  if (n===4) updAltriInfo();
   if (n===TOT) fillRiepilogo();
 }
 function isSingolo(){
@@ -908,22 +908,22 @@ function updTabs() {
     if(i<cur) el.classList.add('done');
     else if(i===cur) el.classList.add('active');
   }
-  const tab3 = document.getElementById('si3');
-  if (tab3) tab3.style.display = isSingolo() ? 'none' : '';
+  const tab4 = document.getElementById('si4');
+  if (tab4) tab4.style.display = isSingolo() ? 'none' : '';
 }
 function goNext() {
   if(cur===1 && !val1()) return;
-  if(cur===2 && !val2()) return;
+  if(cur===3 && !val2()) return;
   if(cur>=TOT) return;
   let next = cur + 1;
-  if (next === 3 && isSingolo()) next = 4;
+  if (next === 4 && isSingolo()) next = 5;
   cur = next;
   showStep(cur);
 }
 function goBack(){
   if(cur<=1) return;
   let prev = cur - 1;
-  if (prev === 3 && isSingolo()) prev = 2;
+  if (prev === 4 && isSingolo()) prev = 3;
   cur = prev;
   showStep(cur);
 }
