@@ -1105,6 +1105,9 @@ function renderOcrSuggestion(){
     boxEl.classList.add('hidden');
     return;
   }
+  if(p._source === 'fallback'){
+    rows.push('<div style="margin-top:8px;color:#e07b39;font-size:12px">⚠️ Dati letti dal solo fronte, non ancora confermati. Se il documento ha un retro con banda leggibile (es. CIE), caricalo anche per una lettura più precisa prima di confermare.</div>');
+  }
   document.getElementById('ocr-fields').innerHTML = rows.join('<br>');
   statusEl.textContent = '';
   boxEl.classList.remove('hidden');
