@@ -55,6 +55,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .upload-txt{font-size:13px;color:#7a8fa0}
 .upload-txt strong{color:#7a9bbf}
 .upload-ok{font-size:12px;color:#e07b39;font-weight:700;margin-top:6px}
+.doc-type-card{background:#f7f9fb;border:2px solid #dce8f0;border-radius:6px;padding:10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.doc-type-card:hover{border-color:#b8ccd8}
+.doc-type-card.selected{border-color:#7a9bbf;background:#eef3f7}
+.doc-type-label{font-size:12px;font-weight:700;color:#4a5e72;margin-top:6px}
+.doc-type-sub{font-size:11px;color:#7a8fa0;margin-top:2px}
 .nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #dce8f0}
 .btn-back{background:none;border:1px solid #b8ccd8;color:#7a8fa0;padding:9px 22px;border-radius:2px;cursor:pointer;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
 .btn-next{background:#7a9bbf;color:#fff;border:none;padding:10px 28px;border-radius:2px;cursor:pointer;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
@@ -416,42 +421,100 @@ function closeHdrOverlay(){document.getElementById("hdr-overlay").classList.remo
 
     <!-- STEP 2 (Documenti) -->
     <div id="s2" class="hidden">
-      <div class="info">Carica fronte e retro del documento dell'ospite principale. Utilizzati esclusivamente per gli adempimenti di legge (D.M. 07/01/2013).</div>
-      <div class="sec-title">Upload documento ospite principale</div>
-      <div class="row c2">
-        <div class="field">
-          <label>Fronte documento *</label>
-          <div style="text-align:center">
-            <div class="upload-txt" style="margin-bottom:8px"><strong>Fronte documento</strong></div>
-            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-              <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f-cam').click()">📷 Fotocamera</button>
-              <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f').click()">📁 Carica file</button>
-            </div>
-            <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';runOcrScan(this.files[0],'fronte');" style="display:none">
-            <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';runOcrScan(this.files[0],'fronte');" style="display:none">
-            <div class="upload-ok" id="ok-f" style="margin-top:6px"></div>
-            <div id="ocr-status" style="margin-top:8px;font-size:12px;color:#7a9bbf"></div>
-            <div id="ocr-suggestion" class="hidden" style="margin-top:8px;text-align:left;background:#f7f9fb;border:1px solid #dce8f0;border-radius:4px;padding:10px 12px;font-size:13px">
-              <div style="font-weight:700;color:#e07b39;margin-bottom:6px">📄 Dati riconosciuti dal documento</div>
-              <div id="ocr-fields" style="line-height:1.6;color:#444"></div>
-              <div style="margin-top:8px;display:flex;gap:8px">
-                <button type="button" class="add-btn" style="padding:6px 12px;font-size:12px" onclick="applyOcrData()">✓ Usa questi dati</button>
-                <button type="button" class="btn-back" style="padding:6px 12px;font-size:12px" onclick="dismissOcrSuggestion()">Ignora</button>
+      <div class="info">Seleziona il tipo di documento che utilizzerai, poi carica le foto richieste. Il sistema proverà a leggere automaticamente i dati per pre-compilare i campi successivi. Documento utilizzato esclusivamente per gli adempimenti di legge (D.M. 07/01/2013).</div>
+
+      <div class="sec-title">Tipo di documento</div>
+      <div class="row c3" id="doc-type-cards">
+        <div class="doc-type-card" data-type="cie" onclick="selectDocType('cie')">
+          <svg viewBox="0 0 120 76" width="100%" height="60">
+            <rect x="2" y="2" width="52" height="72" rx="4" fill="#eef3f7" stroke="#b8ccd8"/>
+            <circle cx="18" cy="24" r="9" fill="#c7d6e0"/>
+            <rect x="30" y="16" width="20" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="30" y="24" width="20" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="8" y="42" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="8" y="49" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="8" y="56" width="26" height="3" fill="#c7d6e0"/>
+            <rect x="66" y="2" width="52" height="72" rx="4" fill="#eef3f7" stroke="#b8ccd8"/>
+            <rect x="72" y="10" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="72" y="17" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="72" y="24" width="30" height="3" fill="#c7d6e0"/>
+            <rect x="70" y="56" width="44" height="4" rx="1" fill="#7a9bbf"/>
+            <rect x="70" y="62" width="44" height="4" rx="1" fill="#7a9bbf"/>
+            <rect x="70" y="68" width="30" height="4" rx="1" fill="#7a9bbf"/>
+          </svg>
+          <div class="doc-type-label">Carta d'Identità Elettronica</div>
+          <div class="doc-type-sub">Fronte + Retro (con banda MRZ)</div>
+        </div>
+        <div class="doc-type-card" data-type="cartacea" onclick="selectDocType('cartacea')">
+          <svg viewBox="0 0 120 76" width="100%" height="60">
+            <rect x="2" y="2" width="52" height="72" rx="4" fill="#eef3f7" stroke="#b8ccd8"/>
+            <circle cx="18" cy="24" r="9" fill="#c7d6e0"/>
+            <rect x="30" y="16" width="20" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="30" y="24" width="20" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="8" y="42" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="8" y="49" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="8" y="56" width="26" height="3" fill="#c7d6e0"/>
+            <rect x="66" y="2" width="52" height="72" rx="4" fill="#eef3f7" stroke="#b8ccd8"/>
+            <rect x="72" y="10" width="40" height="3" fill="#c7d6e0"/>
+            <rect x="72" y="17" width="40" height="3" fill="#c7d6e0"/>
+            <circle cx="92" cy="48" r="14" fill="none" stroke="#e07b39" stroke-width="2"/>
+          </svg>
+          <div class="doc-type-label">Carta d'Identità cartacea</div>
+          <div class="doc-type-sub">Fronte + Retro (vecchio modello)</div>
+        </div>
+        <div class="doc-type-card" data-type="passaporto" onclick="selectDocType('passaporto')">
+          <svg viewBox="0 0 120 76" width="100%" height="60">
+            <rect x="20" y="2" width="80" height="72" rx="4" fill="#eef3f7" stroke="#b8ccd8"/>
+            <circle cx="38" cy="24" r="9" fill="#c7d6e0"/>
+            <rect x="52" y="16" width="36" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="52" y="24" width="36" height="4" rx="2" fill="#b8ccd8"/>
+            <rect x="28" y="42" width="64" height="3" fill="#c7d6e0"/>
+            <rect x="28" y="49" width="64" height="3" fill="#c7d6e0"/>
+            <rect x="26" y="58" width="68" height="4" rx="1" fill="#7a9bbf"/>
+            <rect x="26" y="64" width="68" height="4" rx="1" fill="#7a9bbf"/>
+          </svg>
+          <div class="doc-type-label">Passaporto</div>
+          <div class="doc-type-sub">Solo pagina anagrafica</div>
+        </div>
+      </div>
+
+      <div id="doc-upload-section" class="hidden">
+        <div class="sec-title" id="doc-upload-title">Upload documento ospite principale</div>
+        <div class="row c2">
+          <div class="field">
+            <label id="doc-label-fronte">Fronte documento *</label>
+            <div style="text-align:center">
+              <div class="upload-txt" style="margin-bottom:8px" id="doc-hint-fronte"><strong>Fronte documento</strong></div>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f-cam').click()">📷 Fotocamera</button>
+                <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-f').click()">📁 Carica file</button>
               </div>
+              <input type="file" id="upl-f-cam" accept="image/*" capture="environment" onchange="setUpload('upl-f-cam','ok-f');document.getElementById('upl-f').value='';checkAndRunOcr();" style="display:none">
+              <input type="file" id="upl-f" accept="image/*,.pdf" onchange="setUpload('upl-f','ok-f');document.getElementById('upl-f-cam').value='';checkAndRunOcr();" style="display:none">
+              <div class="upload-ok" id="ok-f" style="margin-top:6px"></div>
+            </div>
+          </div>
+          <div class="field" id="retro-wrapper">
+            <label>Retro documento *</label>
+            <div style="text-align:center">
+              <div class="upload-txt" style="margin-bottom:8px"><strong>Retro documento</strong></div>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r-cam').click()">📷 Fotocamera</button>
+                <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r').click()">📁 Carica file</button>
+              </div>
+              <input type="file" id="upl-r-cam" accept="image/*" capture="environment" onchange="setUpload('upl-r-cam','ok-r');document.getElementById('upl-r').value='';checkAndRunOcr();" style="display:none">
+              <input type="file" id="upl-r" accept="image/*,.pdf" onchange="setUpload('upl-r','ok-r');document.getElementById('upl-r-cam').value='';checkAndRunOcr();" style="display:none">
+              <div class="upload-ok" id="ok-r" style="margin-top:6px"></div>
             </div>
           </div>
         </div>
-        <div class="field">
-          <label>Retro documento</label>
-          <div style="text-align:center">
-            <div class="upload-txt" style="margin-bottom:8px"><strong>Retro documento</strong></div>
-            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-              <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r-cam').click()">📷 Fotocamera</button>
-              <button type="button" class="add-btn" style="padding:8px 14px;font-size:12px" onclick="document.getElementById('upl-r').click()">📁 Carica file</button>
-            </div>
-            <input type="file" id="upl-r-cam" accept="image/*" capture="environment" onchange="setUpload('upl-r-cam','ok-r');document.getElementById('upl-r').value='';runOcrScan(this.files[0],'retro');" style="display:none">
-            <input type="file" id="upl-r" accept="image/*,.pdf" onchange="setUpload('upl-r','ok-r');document.getElementById('upl-r-cam').value='';runOcrScan(this.files[0],'retro');" style="display:none">
-            <div class="upload-ok" id="ok-r" style="margin-top:6px"></div>
+        <div id="ocr-status" style="margin-top:8px;font-size:12px;color:#7a9bbf;text-align:center"></div>
+        <div id="ocr-suggestion" class="hidden" style="margin-top:8px;text-align:left;background:#f7f9fb;border:1px solid #dce8f0;border-radius:4px;padding:10px 12px;font-size:13px">
+          <div style="font-weight:700;color:#e07b39;margin-bottom:6px">📄 Dati riconosciuti dal documento</div>
+          <div id="ocr-fields" style="line-height:1.6;color:#444"></div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button type="button" class="add-btn" style="padding:6px 12px;font-size:12px" onclick="applyOcrData()">✓ Usa questi dati</button>
+            <button type="button" class="btn-back" style="padding:6px 12px;font-size:12px" onclick="dismissOcrSuggestion()">Ignora</button>
           </div>
         </div>
       </div>
@@ -1074,6 +1137,59 @@ function setUpload(inputId,okId){
 
 // ── OCR SCAN DOCUMENTO ───────────────────────────────────────────────────────
 let lastOcrData = null; // merged best-effort result across fronte+retro scans
+let docTypeSelected = null; // 'cie' | 'cartacea' | 'passaporto'
+let ocrAlreadyTriggered = false; // evita richieste duplicate per la stessa selezione
+
+function selectDocType(type){
+  docTypeSelected = type;
+  lastOcrData = null;
+  ocrAlreadyTriggered = false;
+  document.getElementById('ocr-suggestion').classList.add('hidden');
+  document.getElementById('ocr-status').textContent = '';
+
+  document.querySelectorAll('.doc-type-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.type === type);
+  });
+  document.getElementById('doc-upload-section').classList.remove('hidden');
+
+  const isPassaporto = type === 'passaporto';
+  document.getElementById('retro-wrapper').classList.toggle('hidden', isPassaporto);
+
+  const title = document.getElementById('doc-upload-title');
+  const labelFronte = document.getElementById('doc-label-fronte');
+  const hintFronte = document.getElementById('doc-hint-fronte');
+  if(isPassaporto){
+    title.textContent = 'Upload passaporto — pagina anagrafica';
+    labelFronte.textContent = 'Pagina anagrafica *';
+    hintFronte.innerHTML = '<strong>Pagina anagrafica</strong>';
+  } else {
+    title.textContent = 'Upload documento ospite principale';
+    labelFronte.textContent = 'Fronte documento *';
+    hintFronte.innerHTML = '<strong>Fronte documento</strong>';
+  }
+}
+
+function docTypeRequiredSlotsFilled(){
+  const fronteFile = (document.getElementById('upl-f').files[0] || document.getElementById('upl-f-cam').files[0]);
+  if(!fronteFile) return false;
+  if(docTypeSelected === 'passaporto') return true;
+  const retroFile = (document.getElementById('upl-r').files[0] || document.getElementById('upl-r-cam').files[0]);
+  return !!retroFile;
+}
+
+function checkAndRunOcr(){
+  if(!docTypeSelected) return;
+  if(ocrAlreadyTriggered) return;
+  if(!docTypeRequiredSlotsFilled()) return;
+
+  ocrAlreadyTriggered = true;
+  const fronteFile = (document.getElementById('upl-f').files[0] || document.getElementById('upl-f-cam').files[0]);
+  const retroFile = (document.getElementById('upl-r').files[0] || document.getElementById('upl-r-cam').files[0]);
+
+  document.getElementById('ocr-status').textContent = '🔍 Scansione documento in corso...';
+  runOcrScan(fronteFile, 'fronte');
+  if(retroFile) runOcrScan(retroFile, 'retro');
+}
 
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
@@ -1106,7 +1222,7 @@ function renderOcrSuggestion(){
     return;
   }
   if(p._source === 'fallback'){
-    rows.push('<div style="margin-top:8px;color:#e07b39;font-size:12px">⚠️ Dati letti dal solo fronte, non ancora confermati. Se il documento ha un retro con banda leggibile (es. CIE), caricalo anche per una lettura più precisa prima di confermare.</div>');
+    rows.push('<div style="margin-top:8px;color:#e07b39;font-size:12px">⚠️ Dati letti in via approssimativa, verificali con attenzione prima di confermare.</div>');
   }
   document.getElementById('ocr-fields').innerHTML = rows.join('<br>');
   statusEl.textContent = '';
@@ -1115,8 +1231,6 @@ function renderOcrSuggestion(){
 
 function runOcrScan(file, side){
   if(!file) return;
-  const statusEl = document.getElementById('ocr-status');
-  statusEl.textContent = '🔍 Scansione documento in corso...';
 
   fileToBase64(file).then(base64 => {
     return fetch(GAS_URL, {
@@ -1141,14 +1255,14 @@ function runOcrScan(file, side){
       }
       renderOcrSuggestion();
     } else if(!lastOcrData){
-      statusEl.textContent = '⚠️ Nessun dato riconosciuto automaticamente da questo lato. Puoi comunque compilare i campi manualmente.';
+      renderOcrSuggestion(); // mostrerà il messaggio "nessun dato riconosciuto"
       console.warn('OCR: nessun dato da', side, res.message || '');
     } else {
       renderOcrSuggestion();
     }
   }).catch(err => {
     if(!lastOcrData){
-      statusEl.textContent = '⚠️ Scansione non disponibile al momento. Compila i campi manualmente.';
+      document.getElementById('ocr-status').textContent = '⚠️ Scansione non disponibile al momento. Compila i campi manualmente.';
     }
     console.error('OCR request failed ('+side+'):', err);
   });
